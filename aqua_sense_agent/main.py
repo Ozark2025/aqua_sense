@@ -35,7 +35,7 @@ from virtual_sensors.stage_sensors import (
 from virtual_sensors.initial_sensors import VirtualSensorNode
 
 
-vnode = VirtualSensorNode(node_id="virtual-node-01", interval=1.0)
+vnode = VirtualSensorNode(node_id="virtual-node-01", interval=1)
 
 scaler          = joblib.load("scaler.joblib")
 rf_model        = joblib.load("random_forest.joblib")
@@ -69,7 +69,6 @@ lr_model = joblib.load("logistic_regression.joblib")
 dt_model = joblib.load("decision_tree.joblib")
 label_encoder = joblib.load("label_encoder.joblib")
 
-
 @app.get("/get_pridiction_start")
 def get_pridiction_start():
 
@@ -84,6 +83,7 @@ def get_pridiction_start():
         data["TDS_mg_L"]
     ]])
 
+    # Scaling
     X_scaled = scaler.transform(X)
 
     # Predictions
@@ -92,11 +92,10 @@ def get_pridiction_start():
     pred_dt = dt_model.predict(X_scaled)[0]
 
     predictions = [pred_rf, pred_lr, pred_dt]
-
     final_pred = max(set(predictions), key=predictions.count)
     final_label = label_encoder.inverse_transform([final_pred])[0]
 
-    # Model-wise probabilities
+    # Probabilities
     probs_rf = rf_model.predict_proba(X_scaled)[0]
     probs_lr = lr_model.predict_proba(X_scaled)[0]
     probs_dt = dt_model.predict_proba(X_scaled)[0]
@@ -104,23 +103,37 @@ def get_pridiction_start():
     num_classes = len(probs_rf)
     categories = label_encoder.inverse_transform(list(range(num_classes)))
 
-    # Build combined confidence
-    category_confidence = []
+    # --- Clamp function to prevent >1 or <0 ---
+    def clamp01(x):
+        try:
+            x = float(x)
+        except:
+            return 0.0
+        return max(0.0, min(1.0, x))
 
+    # --- Combined Confidence ---
+    category_confidence = []
     for i, cat in enumerate(categories):
-        avg_prob = (probs_rf[i] + probs_lr[i] + probs_dt[i]) / 3
+
+        p_rf = clamp01(probs_rf[i])
+        p_lr = clamp01(probs_lr[i])
+        p_dt = clamp01(probs_dt[i])
+
+        avg_prob = (p_rf + p_lr + p_dt) / 3
+
         category_confidence.append({
             "label": cat,
             "confidence": float(avg_prob)
         })
 
-    # SORT descending by confidence
+    # Sort highest confidence first
     category_confidence_sorted = sorted(
         category_confidence,
         key=lambda x: x["confidence"],
         reverse=True
     )
 
+    # Final response
     return {
         "sensor_data": data,
 
@@ -134,7 +147,6 @@ def get_pridiction_start():
 
         "final_majority_label": final_label
     }
-
 
 
 app.get("/primary_sensors/stream")(sse_stream_for("primary", make_primary_node))
