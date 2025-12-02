@@ -75,7 +75,7 @@ def get_pridiction_start():
 
     data = vnode.step()
 
-    X = np.array([[
+    X = np.array([[ 
         data["pH"],
         data["turbidity_NTU"],
         data["temperature_C"],
