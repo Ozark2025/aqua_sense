@@ -5,6 +5,7 @@ from collections import OrderedDict
 from datetime import datetime, timezone
 import asyncio, time, random
 from typing import List, Dict, Any, Optional
+import json
 
 
 # ---------- simple in-memory config store (per-stage) ----------
@@ -297,11 +298,14 @@ def sse_stream_for(stage: str, node_factory):
         node = node_factory(interval=interval,
                             abnormal_steps=eff_ab_steps, abnormal_duration=eff_ab_duration, ab_alpha=eff_ab_alpha,
                             normal_steps=eff_normal_steps, normal_duration=eff_normal_duration)
+
         async def event_gen():
             yield ":\n\n"
             while True:
-                yield f"data: {node.step()}\n\n"
+                payload = json.dumps(node.step())  # Convert OrderedDict ➜ JSON
+                yield f"data: {payload}\n\n"
                 await asyncio.sleep(node.interval)
+
         return StreamingResponse(event_gen(), media_type="text/event-stream")
     return stream
 

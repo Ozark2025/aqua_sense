@@ -42,10 +42,46 @@ rf_model        = joblib.load("random_forest.joblib")
 label_encoder   = joblib.load("label_encoder.joblib")
 app = FastAPI()
 
+
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000", "*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*", "Cache-Control", "Content-Type"],
+)
 @app.get("/")
 def home():
     return {"message": "FastAPI working!"}
 
+@app.post("/chat-worker")
+async def chatting_worker(request: Request):
+    print("getting hit")
+
+    chat_data = await request.json()
+    print(chat_data['msg'])
+
+
+
+    # print(f"Received request in book : {task_data}")
+    # convert to SimpleNamespace for process_worker
+
+    # Extract values
+    msg = chat_data["msg"]
+    history = chat_data["history"]
+
+    print("📝 Prompt:", msg)
+    print("📜 History:", history)
+
+
+    # res =chat_work(msg,history)
+    return {
+        "msg":"chat worker response",
+        # "data":res,
+        "data": chat_data
+        }
 
 
 @app.get("/vsensor-initial")
@@ -147,6 +183,91 @@ def get_pridiction_start():
 
         "final_majority_label": final_label
     }
+
+
+
+
+@app.get("/get_prediction_last_stage")
+def get_prediction_last_stage():
+
+    data = vnode.step()
+
+    X = np.array([[ 
+        data["pH"],
+        data["turbidity_NTU"],
+        data["temperature_C"],
+        data["DO_mg_L"],
+        data["conductivity_uS_cm"],
+        data["TDS_mg_L"]
+    ]])
+
+    # Scaling
+    X_scaled = scaler.transform(X)
+
+    # Predictions
+    pred_rf = rf_model.predict(X_scaled)[0]
+    pred_lr = lr_model.predict(X_scaled)[0]
+    pred_dt = dt_model.predict(X_scaled)[0]
+
+    predictions = [pred_rf, pred_lr, pred_dt]
+    final_pred = max(set(predictions), key=predictions.count)
+    final_label = label_encoder.inverse_transform([final_pred])[0]
+
+    # Probabilities
+    probs_rf = rf_model.predict_proba(X_scaled)[0]
+    probs_lr = lr_model.predict_proba(X_scaled)[0]
+    probs_dt = dt_model.predict_proba(X_scaled)[0]
+
+    num_classes = len(probs_rf)
+    categories = label_encoder.inverse_transform(list(range(num_classes)))
+
+    # --- Clamp function to prevent >1 or <0 ---
+    def clamp01(x):
+        try:
+            x = float(x)
+        except:
+            return 0.0
+        return max(0.0, min(1.0, x))
+
+    # --- Combined Confidence ---
+    category_confidence = []
+    for i, cat in enumerate(categories):
+
+        p_rf = clamp01(probs_rf[i])
+        p_lr = clamp01(probs_lr[i])
+        p_dt = clamp01(probs_dt[i])
+
+        avg_prob = (p_rf + p_lr + p_dt) / 3
+
+        category_confidence.append({
+            "label": cat,
+            "confidence": float(avg_prob)
+        })
+
+    # Sort highest confidence first
+    category_confidence_sorted = sorted(
+        category_confidence,
+        key=lambda x: x["confidence"],
+        reverse=True
+    )
+
+    # Final response
+    return {
+        "sensor_data": data,
+
+        "model_predictions": {
+            "random_forest": label_encoder.inverse_transform([pred_rf])[0],
+            "logistic_regression": label_encoder.inverse_transform([pred_lr])[0],
+            "decision_tree": label_encoder.inverse_transform([pred_dt])[0],
+        },
+
+        "category_confidence": category_confidence_sorted,
+
+        "final_majority_label": final_label
+    }
+
+
+
 
 
 app.get("/primary_sensors/stream")(sse_stream_for("primary", make_primary_node))
