@@ -158,9 +158,8 @@ export default function AIChatPage() {
   };
 
   return (
+    
     <ClientAuth>
-    //  <main className="flex flex-col min-h-screen">
-    //   <Header/>
     <div className="flex flex-1 h-screen overflow-hidden bg-shakespeare-50 ">
       {/* Left Sidebar */}
       <Sidebar
@@ -185,7 +184,8 @@ export default function AIChatPage() {
         activeAgent={activeAgent}
       />
     </div>
-    // </main>
     </ClientAuth>
+    
+    
   );
 }

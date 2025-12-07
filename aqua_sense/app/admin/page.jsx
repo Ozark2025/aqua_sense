@@ -7,9 +7,12 @@ import LiveDataWidget from '@/components/admin/LiveDataWidget';
 import WaveDivider from '@/components/admin/WaveDivider';
 import Header from '@/components/Header';
 import { Home } from "lucide-react";
+import ClientAuth from '../../components/auth/ClientAuth';
 
 export default function AdminDashboard() {
   return (
+    
+    <ClientAuth roles={["admin"]}>
     <div className="flex min-h-screen bg-gradient-to-br from-shakespeare-50 via-shakespeare-100 to-aqua-teal/20">
       
       {/* Sidebar */}
@@ -19,7 +22,7 @@ export default function AdminDashboard() {
 </div>
 
      
-
+     
       {/* Main Content */}
       <main className="flex-1 ml-72 overflow-y-auto">
         {/* Header */}
@@ -96,6 +99,10 @@ export default function AdminDashboard() {
           </section>
         </div>
       </main>
+     
+
     </div>
+     </ClientAuth>
+    
   );
 }

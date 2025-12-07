@@ -22,7 +22,7 @@ export default function ClientAuth({ children, roles }) {
   // ❌ Role check (if roles prop exists)
   if (roles && !roles.includes(session.user.role)) {
     useEffect(() => {
-      setTimeout(() => router.push("/unauthorized"), 1500);
+      setTimeout(() => router.push("/"), 1500);
     }, []);
 
     return <div className="flex items-center justify-center h-screen text-center text-red-600 text-xl font-semibold">
