@@ -1,6 +1,6 @@
 // import HeaderWaterflow from '@/components/HeaderWaterflow';
 // import LiveMetrics from '@/components/LiveMetrics';
-// import PipelineFlow from '@/components/PipelineFlow';
+
 // import LegendPanel from '@/components/LegendPanel';
 // import FooterWave from '@/components/FooterWave';
 // import Header from '@/components/Header';
@@ -56,6 +56,7 @@ import UserControlPanel from '@/components/monitor/UserControlPanel';
 import TreatmentFlowVisualization from '@/components/monitor/TreatmentFlowVisualization';
 import Header from '@/components/Header';
 import ClientAuth from "@/components/auth/ClientAuth";
+import PipelineFlow from '@/components/PipelineFlow';
 export default function WaterMonitor() {
   const [batchData, setBatchData] = useState(null);
   const [predictions, setPredictions] = useState(null);
@@ -116,7 +117,7 @@ export default function WaterMonitor() {
        <div className="fixed top-0 left-0 w-full z-50"><Header/></div>
       <div className="relative z-10 pt-[90px]">
         <HeaderWaterflow />
-        
+         <PipelineFlow />
         <div className="container mx-auto px-4 py-8">
           {/* Progress Indicator */}
           <motion.div
