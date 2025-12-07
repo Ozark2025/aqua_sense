@@ -128,6 +128,7 @@ const confirmAction = async () => {
     }
 
     if (modalAction === "Make Admin") {
+      console.log("Making admin for user:", selectedUser.id);
       res = await fetch(`/api/users/${selectedUser.id}`, {
         method: "PATCH",
         credentials: "include",
