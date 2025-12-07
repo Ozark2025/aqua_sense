@@ -15,8 +15,11 @@ export async function GET() {
     }
 
     const result = await pool.query(
-      `SELECT id, name, email, role ,created_at FROM "User"`
-    );
+  `SELECT id, name, email, role, created_at
+   FROM "User"
+   ORDER BY created_at DESC`
+);
+
 
     return NextResponse.json(result.rows); // ✅ MUST HIT THIS
 

@@ -1,16 +1,22 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { authOptions } from "../../auth/[...nextauth]/route.js";
-import pool from "../../../../lib/db.js";
+import { authOptions } from "../../auth/[...nextauth]/route";
+import pool from "../../../../lib/db";
 
 // ✅ MAKE ADMIN
+
+
 export async function PATCH(req, { params }) {
+  // ✅ unwrap params
+  const { id: userId } = await params;
+
+  console.log("USER ID FROM PARAMS:", userId);
+
   const session = await getServerSession(authOptions);
+
   if (!session || session.user.role !== "admin") {
     return NextResponse.json({ message: "Forbidden" }, { status: 403 });
   }
-
-  const userId = params.id;
 
   await pool.query(
     `UPDATE "User" SET role = 'admin' WHERE id = $1`,
@@ -19,6 +25,7 @@ export async function PATCH(req, { params }) {
 
   return NextResponse.json({ success: true });
 }
+
 
 // ✅ DELETE USER
 export async function DELETE(req, { params }) {
