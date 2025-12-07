@@ -46,24 +46,60 @@ export default function StaffReporting() {
     setFormData({ ...formData, images: newImages });
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Here you would send the report to admin
-    console.log('Staff report submitted:', formData);
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  const form = new FormData();
+
+  // append text fields
+  form.append("title", formData.title);
+  form.append("category", formData.category);
+  form.append("priority", formData.priority);
+  form.append("location", formData.location);
+  form.append("description", formData.description);
+
+  // append images (multiple)
+  formData.images.forEach((imageFile) => {
+    form.append("photos", imageFile); // MUST match backend name → "photos"
+  });
+
+  try {
+    const res = await fetch("/api/report", {
+      method: "POST",
+      body: form,
+    });
+
+    const data = await res.json();
+    console.log("data", data);
+
+    if (!res.ok) {
+      console.error("Error:", data.error);
+      alert("Failed to submit report");
+      return;
+    }
+
+    console.log("Success:", data);
     setSubmitted(true);
+
+    // reset form
     setTimeout(() => {
       setSubmitted(false);
       setFormData({
-        title: '',
-        description: '',
-        location: '',
-        priority: 'medium',
-        category: '',
+        title: "",
+        description: "",
+        location: "",
+        priority: "medium",
+        category: "",
         images: [],
       });
       setPreviewImages([]);
     }, 3000);
-  };
+
+  } catch (err) {
+    console.error("Submit error:", err);
+  }
+};
+
 
   return (
     <section className="py-16 bg-gradient-to-b from-shakespeare-50 to-white relative overflow-hidden">
