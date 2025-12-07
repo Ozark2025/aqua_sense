@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import GlassCard from '@/components/admin/GlassCard';
 import DataTable from '@/components/admin/DataTable';
@@ -10,43 +10,63 @@ import Header from '@/components/Header';
 
 export default function UsersPage() {
   const [showModal, setShowModal] = useState(false);
-  const [modalAction, setModalAction] = useState(null);
+  
   const [selectedUser, setSelectedUser] = useState(null);
+  const [users, setUsers] = useState([]);
+   const [modalAction, setModalAction] = useState(null);
 
-  const users = [
-    {
-      id: 1,
-      name: 'Rajesh Kumar',
-      email: 'rajesh.kumar@aquasense.in',
-      role: 'Plant Operator',
-      joiningDate: '2024-01-15',
-      status: 'Active'
-    },
-    {
-      id: 2,
-      name: 'Priya Sharma',
-      email: 'priya.sharma@aquasense.in',
-      role: 'ML Engineer',
-      joiningDate: '2024-02-20',
-      status: 'Active'
-    },
-    {
-      id: 3,
-      name: 'Amit Patel',
-      email: 'amit.patel@aquasense.in',
-      role: 'Field Technician',
-      joiningDate: '2024-03-10',
-      status: 'Inactive'
-    },
-    {
-      id: 4,
-      name: 'Sneha Reddy',
-      email: 'sneha.reddy@aquasense.in',
-      role: 'Water Quality Analyst',
-      joiningDate: '2024-04-05',
-      status: 'Active'
-    }
-  ];
+  // const users = [
+  //   {
+  //     id: 1,
+  //     name: 'Rajesh Kumar',
+  //     email: 'rajesh.kumar@aquasense.in',
+  //     role: 'Plant Operator',
+  //     joiningDate: '2024-01-15',
+  //     status: 'Active'
+  //   },
+  //   {
+  //     id: 2,
+  //     name: 'Priya Sharma',
+  //     email: 'priya.sharma@aquasense.in',
+  //     role: 'ML Engineer',
+  //     joiningDate: '2024-02-20',
+  //     status: 'Active'
+  //   },
+  //   {
+  //     id: 3,
+  //     name: 'Amit Patel',
+  //     email: 'amit.patel@aquasense.in',
+  //     role: 'Field Technician',
+  //     joiningDate: '2024-03-10',
+  //     status: 'Inactive'
+  //   },
+  //   {
+  //     id: 4,
+  //     name: 'Sneha Reddy',
+  //     email: 'sneha.reddy@aquasense.in',
+  //     role: 'Water Quality Analyst',
+  //     joiningDate: '2024-04-05',
+  //     status: 'Active'
+  //   }
+  // ];
+
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch("/api/users", {
+          credentials: "include",
+        });
+        const data = await res.json();
+        console.log("Fetched Users 👉", data);
+        setUsers(data);
+      } catch (err) {
+        console.error("Failed to fetch users", err);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const handleAction = (action, user) => {
     setModalAction(action);
@@ -54,11 +74,84 @@ export default function UsersPage() {
     setShowModal(true);
   };
 
-  const confirmAction = () => {
-    // Handle the action here
-    console.log(`${modalAction} for user:`, selectedUser);
+
+  // const confirmAction = async () => {
+  //   try {
+  //     if (modalAction === "Delete") {
+  //       await fetch(`/api/users/${selectedUser.id}`, {
+  //         method: "DELETE",
+  //         credentials: "include",
+  //       });
+
+  //       setUsers((prev) =>
+  //         prev.filter((u) => u.id !== selectedUser.id)
+  //       );
+  //     }
+
+  //     if (modalAction === "Make Admin") {
+  //       await fetch(`/api/users/${selectedUser.id}`, {
+  //         method: "PATCH",
+  //         credentials: "include",
+  //       });
+
+  //       setUsers((prev) =>
+  //         prev.map((u) =>
+  //           u.id === selectedUser.id
+  //             ? { ...u, role: "admin" }
+  //             : u
+  //         )
+  //       );
+  //     }
+
+  //     // Optional: Reset Password logic later
+  //   } catch (err) {
+  //     console.error("Action failed:", err);
+  //   } finally {
+  //     setShowModal(false);
+  //   }
+  // };
+const confirmAction = async () => {
+  try {
+    let res;
+
+    if (modalAction === "Delete") {
+      res = await fetch(`/api/users/${selectedUser.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+
+      if (!res.ok) throw new Error("Delete failed");
+
+      setUsers(prev =>
+        prev.filter(u => u.id !== selectedUser.id)
+      );
+    }
+
+    if (modalAction === "Make Admin") {
+      res = await fetch(`/api/users/${selectedUser.id}`, {
+        method: "PATCH",
+        credentials: "include",
+      });
+
+      if (!res.ok) throw new Error("Make admin failed");
+
+      setUsers(prev =>
+        prev.map(u =>
+          u.id === selectedUser.id
+            ? { ...u, role: "admin" }
+            : u
+        )
+      );
+    }
+
+  } catch (err) {
+    console.error("Action failed:", err);
+    alert("Action failed. Try again.");
+  } finally {
     setShowModal(false);
-  };
+  }
+};
+
 
   const handleExportToExcel = () => {
     // Create CSV content
@@ -88,14 +181,14 @@ export default function UsersPage() {
   };
 
   const columns = [
-    { 
-      header: 'Name', 
+    {
+      header: 'Name',
       key: 'name',
       render: (val) => <span className="font-semibold text-shakespeare-950">{val}</span>
     },
     { header: 'Email', key: 'email' },
-    { 
-      header: 'Role', 
+    {
+      header: 'Role',
       key: 'role',
       render: (val) => (
         <span className="px-3 py-1 rounded-full bg-shakespeare-500/20 text-shakespeare-700 text-xs font-semibold">
@@ -103,18 +196,25 @@ export default function UsersPage() {
         </span>
       )
     },
-    { header: 'Joining Date', key: 'joiningDate' },
-    { 
-      header: 'Status', 
-      key: 'status',
+    {
+      header: 'Joining Date',
+      key: 'created_at',
       render: (val) => (
-        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-          val === 'Active' ? 'bg-green-500/20 text-green-700' : 'bg-gray-500/20 text-gray-700'
-        }`}>
-          {val}
+        <span>
+          {new Date(val).toLocaleDateString()}
         </span>
       )
     },
+    {
+      header: 'Status',
+      key: 'status',
+      render: () => (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-700">
+          Active
+        </span>
+      )
+    },
+
     {
       header: 'Actions',
       key: 'actions',
@@ -130,7 +230,7 @@ export default function UsersPage() {
           >
             <Trash2 className="w-4 h-4" />
           </button>
-          <button
+          {/* <button
             onClick={(e) => {
               e.stopPropagation();
               handleAction('Reset Password', user);
@@ -139,7 +239,7 @@ export default function UsersPage() {
             title="Reset Password"
           >
             <RefreshCw className="w-4 h-4" />
-          </button>
+          </button> */}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -159,10 +259,10 @@ export default function UsersPage() {
     <div className="flex min-h-screen bg-gradient-to-br from-shakespeare-50 via-shakespeare-100 to-aqua-teal/20">
 
       <div className="fixed left-0 top-0 h-screen w-64 bg-white/20 backdrop-blur-xl border-r border-white/20">
-        
-         <AdminSidebar />
+
+        <AdminSidebar />
       </div>
-    
+
 
       <main className="flex-1 overflow-y-auto ml-72">
         {/* Header */}

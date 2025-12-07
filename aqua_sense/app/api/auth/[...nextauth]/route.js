@@ -47,6 +47,7 @@ export const authOptions = {
         );
 
         const user = insert.rows[0];
+        
 
         // attach to token
         token.id = user.id;
@@ -73,21 +74,26 @@ export const authOptions = {
 
       return token;
     },
+   
+    
 
     // ---------------------------------------------
     // 2️⃣ Session callback → expose data to frontend
     // ---------------------------------------------
     async session({ session, token }) {
+       
       session.user.id = token.id;
       session.user.name = token.name;
       session.user.email = token.email;
       session.user.image = token.image;
       session.user.bio = token.bio;
       session.user.role = token.role;
+      // console.log("SESSION 👉", session);
       return session;
     },
   },
 };
+
 
 const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };

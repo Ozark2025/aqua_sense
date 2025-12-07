@@ -134,6 +134,52 @@ CREATE TABLE IF NOT EXISTS hold_events (
     corrective_action TEXT
 );
 
+
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+CREATE TABLE IF NOT EXISTS "User" (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT,
+  email TEXT UNIQUE NOT NULL,
+  image TEXT,
+  bio TEXT,
+  role TEXT CHECK (role IN ('staff', 'admin')) DEFAULT 'staff'
+);
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+CREATE TABLE IF NOT EXISTS issue_reports (
+    report_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+    -- FK to User table
+    user_id UUID REFERENCES "User"(id) ON DELETE SET NULL,
+
+    -- Form fields
+    title TEXT NOT NULL,
+    category TEXT CHECK (category IN (
+    'equipment',
+    'quality',
+    'leak',
+    'maintenance',
+    'safety',
+    'other'
+    )) NOT NULL,
+
+    priority TEXT CHECK (priority IN ('low','medium','high','critical')) NOT NULL,
+
+    location TEXT NOT NULL,
+    description TEXT NOT NULL,
+
+    -- store uploaded file URLs (S3, Cloudinary, or local)
+    photos TEXT[],
+
+    -- report status
+    status TEXT CHECK (status IN ('new','in_progress','resolved','closed'))
+        DEFAULT 'new',
+
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 ---------------------------------------------------------
 -- Indexes
 ---------------------------------------------------------

@@ -1,57 +1,92 @@
 'use client';
 
-import { useState } from 'react';
+
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import GlassCard from '@/components/admin/GlassCard';
 import WaveDivider from '@/components/admin/WaveDivider';
 import { MapPin, Image as ImageIcon, AlertTriangle, CheckCircle, X, Eye } from 'lucide-react';
+import { useEffect, useState } from "react";
+
 
 export default function StaffReportsPage() {
   const [selectedReport, setSelectedReport] = useState(null);
 
-  const reports = [
-    {
-      id: 1,
-      staffName: 'Suresh Patel',
-      location: 'Indore Water Treatment Plant',
-      coordinates: '22.7196° N, 75.8577° E',
-      issueType: 'Equipment Malfunction',
-      priority: 'High',
-      description: 'RO membrane showing signs of fouling. Water flow rate has decreased by 30% in the past week.',
-      images: ['/images/water1.jpg', '/images/water2.jpg'],
-      submittedOn: '2024-12-06 09:15 AM',
-      status: 'Pending Review'
-    },
-    {
-      id: 2,
-      staffName: 'Meera Krishnan',
-      location: 'Chennai Facility - Zone B',
-      coordinates: '13.0827° N, 80.2707° E',
-      issueType: 'Water Quality Alert',
-      priority: 'Critical',
-      description: 'Unusually high turbidity detected in raw water intake. Monsoon runoff may be contaminating the source.',
-      images: ['/images/water3.jpg'],
-      submittedOn: '2024-12-06 07:45 AM',
-      status: 'Pending Review'
-    },
-    {
-      id: 3,
-      staffName: 'Arjun Verma',
-      location: 'Gujarat Rural Station',
-      coordinates: '23.0225° N, 72.5714° E',
-      issueType: 'Routine Maintenance',
-      priority: 'Low',
-      description: 'Scheduled cleaning of filtration tanks completed. All parameters normal.',
-      images: [],
-      submittedOn: '2024-12-05 04:30 PM',
-      status: 'Approved'
-    }
-  ];
+  const [reports, setReports] = useState([]);
 
-  const handleReviewAction = (reportId, action) => {
-    console.log(`${action} report ${reportId}`);
-    setSelectedReport(null);
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        const res = await fetch("/api/allreport", {
+          method: "GET",
+          credentials: "include",
+        });
+
+        const data = await res.json();
+        console.log("Fetched reports:", data);
+
+        // ✅ CRITICAL FIX
+        if (!Array.isArray(data)) {
+          console.error("API did not return array:", data);
+          return;
+        }
+
+        const formattedReports = data.map((r) => ({
+          id: r.report_id,
+          staffName: r.user_name || "Unknown",
+          location: r.location,
+          coordinates: "N/A",
+          issueType: r.category,
+          priority: r.priority,
+          description: r.description,
+          images: r.photos ?? [],
+          submittedOn: new Date(r.created_at).toLocaleString(),
+          status: r.status,
+        }));
+
+        setReports(formattedReports);
+      } catch (err) {
+        console.error("Fetch failed:", err);
+      }
+    };
+
+    fetchReports();
+  }, []);
+
+  // const handleReviewAction = (reportId, action) => {
+  //   console.log(`${action} report ${reportId}`);
+  //   setSelectedReport(null);
+  // };
+  const handleReviewAction = async (reportId, status) => {
+    try {
+      const res = await fetch("/api/allreport/status", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          reportId,
+          status, // "in_progress" | "closed" | "resolved"
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to update report status");
+      }
+
+      // ✅ Update UI instantly
+      setReports((prev) =>
+        prev.map((r) =>
+          r.id === reportId ? { ...r, status } : r
+        )
+      );
+
+      setSelectedReport(null);
+    } catch (err) {
+      console.error("Action failed:", err);
+    }
   };
+
 
   const getPriorityColor = (priority) => {
     switch (priority) {
@@ -61,12 +96,18 @@ export default function StaffReportsPage() {
       default: return 'bg-green-500/20 text-green-700 border-green-500/30';
     }
   };
+  const statusLabel = {
+    new: "Pending Review",
+    in_progress: "Approved",
+    resolved: "Resolved",
+    closed: "Rejected",
+  };
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-shakespeare-50 via-shakespeare-100 to-aqua-teal/20">
       <div className="fixed left-0 top-0 h-screen w-64 bg-white/20 backdrop-blur-xl border-r border-white/20">
-        
-         <AdminSidebar />
+
+        <AdminSidebar />
       </div>
 
       <main className="flex-1 overflow-y-auto ml-72">
@@ -212,7 +253,7 @@ export default function StaffReportsPage() {
                       <ImageIcon className="w-5 h-5" />
                       Attached Photos ({selectedReport.images.length})
                     </h3>
-                    <div className="grid grid-cols-2 gap-4">
+                    {/* <div className="grid grid-cols-2 gap-4">
                       {selectedReport.images.map((img, idx) => (
                         <div key={idx} className="aspect-video rounded-2xl bg-shakespeare-200/30 overflow-hidden">
                           <div className="w-full h-full bg-gradient-to-br from-shakespeare-300 to-shakespeare-500 flex items-center justify-center">
@@ -220,26 +261,77 @@ export default function StaffReportsPage() {
                           </div>
                         </div>
                       ))}
+                    </div> */}
+                    <div className="grid grid-cols-2 gap-4">
+                      {selectedReport.images.map((img, idx) => (
+                        <div
+                          key={idx}
+                          className="aspect-video rounded-2xl overflow-hidden border"
+                        >
+                          <img
+                            src={img}
+                            alt={`Report image ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
 
                 {/* Actions */}
-                <div className="flex gap-4">
+
+                {/* <div className="flex gap-4">
                   <button
-                    onClick={() => handleReviewAction(selectedReport.id, 'Reject')}
-                    className="flex-1 px-6 py-4 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-600 font-semibold transition-all duration-300"
+                    onClick={() =>
+                      handleReviewAction(selectedReport.id, "closed")
+                    }
+                    className="flex-1 px-6 py-4 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-600 font-semibold transition-all"
                   >
                     Reject Report
                   </button>
+
                   <button
-                    onClick={() => handleReviewAction(selectedReport.id, 'Approve')}
-                    className="flex-1 px-6 py-4 rounded-xl bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold hover:shadow-lg hover:shadow-green-500/30 transition-all duration-300 flex items-center justify-center gap-2"
+                    onClick={() =>
+                      handleReviewAction(selectedReport.id, "in_progress")
+                    }
+                    className="flex-1 px-6 py-4 rounded-xl bg-green-600 text-white font-semibold flex items-center justify-center gap-2"
                   >
                     <CheckCircle className="w-5 h-5" />
                     Approve Report
                   </button>
-                </div>
+                </div> */}
+                {/* Actions or Status */}
+                {selectedReport.status === "new" ? (
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() =>
+                        handleReviewAction(selectedReport.id, "closed")
+                      }
+                      className="flex-1 px-6 py-4 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-600 font-semibold"
+                    >
+                      Reject Report
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        handleReviewAction(selectedReport.id, "in_progress")
+                      }
+                      className="flex-1 px-6 py-4 rounded-xl bg-green-600 text-white font-semibold flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle className="w-5 h-5" />
+                      Approve Report
+                    </button>
+                  </div>
+                ) : (
+                  <div className="text-center py-4">
+                    <span className="px-4 py-2 rounded-full text-sm font-semibold">
+                      Status: {statusLabel[selectedReport.status]}
+                    </span>
+                  </div>
+                )}
+
+
               </div>
             </GlassCard>
           </div>
