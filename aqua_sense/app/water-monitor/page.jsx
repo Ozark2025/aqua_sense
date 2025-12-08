@@ -66,6 +66,7 @@ export default function WaterMonitor() {
 
   const handleStartBatch = (data) => {
     setBatchData(data);
+    console.log("Batch Data Received:", data);
     setCurrentStep('prediction');
   };
 

@@ -54,10 +54,10 @@ export default function Header() {
           </div>
 
           {/* CTA Button */}
-          <button >
+          
             <AuthButton/>
            
-          </button>
+        
 
           {/* Mobile Menu Button */}
           <button
@@ -85,9 +85,9 @@ export default function Header() {
                 {link.label}
               </Link>
             ))}
-            <button >
+            
              <AuthButton />
-            </button>
+            
           </div>
         )}
       </nav>
