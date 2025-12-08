@@ -60,9 +60,9 @@ export default function RightPanel({ isOpen, onToggle, activeAgent }) {
           </div>
 
           {/* Content */}
-          <div className="relative space-y-6">
+          <div className="relative space-y-0">
             {/* Header */}
-            <div>
+            {/* <div>
               <h2 className="font-display text-2xl font-bold text-shakespeare-950 mb-2 flex items-center gap-2">
                 <span className="text-2xl">✨</span>
                 Smart Suggestions
@@ -70,13 +70,13 @@ export default function RightPanel({ isOpen, onToggle, activeAgent }) {
               <p className="text-sm text-shakespeare-700">
                 Quick actions and helpful tips
               </p>
-            </div>
+            </div> */}
 
             {/* Wave divider */}
             <div className="w-full h-px bg-gradient-to-r from-transparent via-shakespeare-400 to-transparent" />
 
             {/* Quick Actions */}
-            <div>
+            {/* <div>
               <h3 className="font-display text-lg font-semibold text-shakespeare-900 mb-3">
                 Quick Actions
               </h3>
@@ -104,7 +104,7 @@ export default function RightPanel({ isOpen, onToggle, activeAgent }) {
                   </button>
                 ))}
               </div>
-            </div>
+            </div> */}
 
             {/* 3D Water Molecule */}
             <div className="glassmorphism-strong rounded-3xl p-6">

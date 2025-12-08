@@ -497,3 +497,28 @@ def search_worker(request: UserRequest):
     print(f"Received request: {request.msg}")
     res = searching(request.msg)
     return {"data": res, "msg": "search worker response"}
+
+
+
+from fastapi import Request
+from ml_agent import ml_searching
+
+@app.post("/ml_chat")
+async def ml_chat_api(request: Request):
+    data = await request.json()
+
+    query = data.get("msg")
+    history = data.get("history", [])
+
+    if not query:
+        return {
+            "success": False,
+            "msg": "Missing 'query' field in request body"
+        }
+
+    result = ml_searching(query, history)
+    return result
+
+
+
+# 3 worker ml chat , search worker batch , chat worker chat bot
