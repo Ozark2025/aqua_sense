@@ -29,12 +29,9 @@ CREATE TABLE IF NOT EXISTS batches (
 
     intended_reuse TEXT,
     ai_predicted_reuse TEXT,
-    required_stages TEXT[],
-
-    current_stage TEXT,
-    status TEXT CHECK (status IN ('PROCESSING','HOLDING','COMPLETED','FAILED')),
+    flow_rate DOUBLE PRECISION;
     final_result TEXT CHECK (final_result IN ('SUITABLE','NOT_SUITABLE')),
-    final_report_url TEXT
+    
 );
 
 ---------------------------------------------------------
