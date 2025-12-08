@@ -21,7 +21,8 @@ export default function BatchInputPanel({ onStartBatch }) {
    const eventSourceRef = useRef(null);
 
 const connectStream = () => {
-  const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/initial_sensors/stream`;
+  // const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/initial_sensors/stream`;
+  const url = `${process.env.NEXT_PUBLIC_BACKEND_URL_2}/initial_real_sensors/stream`;
 
   const es = new EventSource(url);
 
@@ -30,14 +31,16 @@ const connectStream = () => {
 
     try {
       const parsed = JSON.parse(event.data.replace(/'/g, '"'));
-
+      // console.log("wtf ",parsed);
+      
       setBatchData({
         pH: (parsed.pH).toFixed(2),
         TDS: (parsed.TDS_mg_L).toFixed(2),
         turbidity: (parsed.turbidity_NTU).toFixed(2),
         DO: (parsed.DO_mg_L).toFixed(2),
         temperature: (parsed.temperature_C).toFixed(2),
-        flowRate: (parsed.conductivity_uS_cm).toFixed(2)
+        // flowRate: (parsed.conductivity_uS_cm)?.toFixed(2) || (parsed.flow)?.toFixed(2)
+        flowRate: (parsed.flow)?.toFixed(2)
       });
 
     } catch (err) {
