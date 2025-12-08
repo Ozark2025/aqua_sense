@@ -93,7 +93,7 @@ export default function WaterMonitor() {
   };
 
   return (
-    <ClientAuth>
+    
     <main className="min-h-screen bg-gradient-to-b from-shakespeare-50 via-shakespeare-100 to-shakespeare-200 relative overflow-hidden">
       {/* Animated water background overlay */}
       <div className="fixed inset-0 pointer-events-none z-0">
@@ -298,6 +298,7 @@ export default function WaterMonitor() {
                             <p className="text-3xl font-display font-bold text-emerald-600">A+</p>
                           </div>
                         </div>
+                      
                       </div>
                     )}
 
@@ -360,8 +361,9 @@ export default function WaterMonitor() {
         </div>
 
         <FooterWave />
+       
       </div>
     </main>
-    </ClientAuth>
+    
   );
 }

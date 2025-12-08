@@ -1125,6 +1125,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import BatchInputPanel from '@/components/monitor/BatchInputPanel';
 
 /* ===========================
    CONFIG: stages + thresholds
@@ -1465,6 +1466,10 @@ export default function TreatmentFlowPage({ processingData, onComplete }) {
       </div>
     );
   }
+    const handleStartBatch = (data) => {
+    setBatchData(data);
+    // setCurrentStep('prediction');
+  };
 
   return (
     <div className="space-y-6">
@@ -1585,9 +1590,14 @@ export default function TreatmentFlowPage({ processingData, onComplete }) {
             <div style={{ marginTop: 10 }}>
               <button onClick={() => startProcessing()} style={{ padding: "8px 14px", background: "#34d399", borderRadius: 8, color: "#042A2B", fontWeight: 700 }}>Run another batch</button>
             </div>
+            <BatchInputPanel onStartBatch={handleStartBatch} />
           </motion.div>
         )}
       </div>
     </div>
   );
 }
+
+
+
+
