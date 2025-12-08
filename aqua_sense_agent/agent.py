@@ -449,7 +449,7 @@
 #                 "message": f"✅ Sure! Fetching data for batch {batch_number} now.",
 #                 "api_call": {
 #                     "method": "POST",
-#                     "url": "http://localhost:3000/api/batch/by-number",
+#                     "url": "http://localhost:3000/api/batch_data_test",
 #                     "body": {"batch_number": batch_number}
 #                 }
 #             }
@@ -472,11 +472,424 @@
 #     }
 
 
+# import os
+# # from langchain.prompts import ChatPromptTemplate
+# from langchain_core.prompts import ChatPromptTemplate
+
+# # from langchain.chains import LLMChain
+# # from langchain_core.chains import LLMChain
+# from langchain.chains import LLMChain
+
+
+# from langchain.output_parsers import ResponseSchema, StructuredOutputParser
+# from dotenv import load_dotenv
+# from model import llm_chain, get_llm
+
+# # ---------------------------
+# # ENV SETUP
+# # ---------------------------
+# load_dotenv()
+# os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
+
+# llm = get_llm()
+
+# # ---------------------------
+# # MAIN CHAT PROMPT (Normal Chat)
+# # ---------------------------
+# prompt = ChatPromptTemplate.from_messages([
+#     ("system",
+#      "You are AquaSense's AI Agent. You assist users with water batch monitoring, "
+#      "sensor data, ML predictions, and general water-quality questions. "
+#      "Always be polite, professional, and supportive."
+#     ),
+#     ("human", "{user_input}")
+# ])
+
+# chat_chain = LLMChain(llm=llm, prompt=prompt)
+
+# # ---------------------------
+# # EXTRACTION SCHEMA
+# # ---------------------------
+# schemas_extract = [
+#     ResponseSchema(
+#         name="intent",
+#         description="Must be one of: 'get_batch', 'general_chat', 'unknown'"
+#     ),
+#     ResponseSchema(
+#         name="batch_number",
+#         description="Batch number if present. Otherwise null."
+#     ),
+#     ResponseSchema(
+#         name="needs_api",
+#         description="true if backend API must be called. false if LLM can answer."
+#     )
+# ]
+
+# parser_extract = StructuredOutputParser.from_response_schemas(schemas_extract)
+# format_extract = parser_extract.get_format_instructions()
+
+# # ---------------------------
+# # EXTRACTION PROMPT
+# # ---------------------------
+# prompt_extract = ChatPromptTemplate.from_template("""
+# You classify batch-related user requests for AquaSense.
+
+# Rules:
+# - If user asks for batch details → intent = "get_batch"
+# - If they mention "batch 12" → batch_number = 12
+# - If they say "today" or "latest" → batch_number = null
+# - Batch requests → needs_api = true
+# - Normal chat → needs_api = false
+# - If unclear → intent = "unknown"
+
+# Return ONLY:
+# {format_instructions}
+
+# User Query:
+# {user_input}
+# """)
+
+# extract_chain = LLMChain(llm=llm, prompt=prompt_extract)
+
+# # -------------------------------------------------
+# # HELPER: LLM-GENERATED MESSAGE (NO HARDCODE)
+# # -------------------------------------------------
+# def build_llm_message(query: str, mode: str, batch_number=None):
+#     """
+#     Generates a human-friendly message automatically using LLM.
+#     """
+#     if mode == "api_specific":
+#         prompt = f"""
+#         The user asked: "{query}"
+
+#         Generate a around 50 words, warm, human-like message explaining:
+#         - You understood they want batch {batch_number}
+#         - You are preparing to fetch the full batch details from the backend
+#         - It will include sensor readings, ML predictions, alerts, etc.
+#         - Be polite, detailed, supportive.
+#         - Do NOT mention URLs or APIs.
+#         """
+    
+#     elif mode == "api_latest":
+#         prompt = f"""
+#         The user asked: "{query}"
+
+#         Generate a around 50 words, friendly message explaining:
+#         - You are now retrieving the latest batch from today
+#         - It will include all sensor values, predictions, and alerts
+#         - Reassure the user that data is being fetched
+#         """
+
+#     elif mode == "general":
+#         prompt = f"""
+#         The user asked: "{query}"
+
+#         Generate a detailed, conversational, supportive message as AquaSense’s assistant.
+#         """
+
+#     else:  # unclear
+#         prompt = f"""
+#         The user said: "{query}"
+
+#         You could not determine the batch.
+#         Generate a around 50 words, polite message asking them to specify:
+#         - A batch number (e.g., "batch 7")
+#         - Or "latest batch"
+#         - Or "today’s batch"
+#         Be patient and helpful.
+#         """
+
+#     result = llm_chain(prompt)
+#     return result
+
+# # -------------------------------------------------
+# # MAIN DECISION ENGINE
+# # -------------------------------------------------
+# def process_request(api_prompt: str):
+#     """
+#     Decides:
+#     - Whether to call backend API
+#     - Which API
+#     - Or return LLM response
+#     """
+
+#     extracted_raw = extract_chain.run(
+#         user_input=api_prompt,
+#         format_instructions=format_extract
+#     )
+#     extracted = parser_extract.parse(extracted_raw)
+
+#     intent = extracted.get("intent")
+#     batch_number = extracted.get("batch_number")
+#     needs_api = extracted.get("needs_api")
+
+#     # Convert batch_number to int when possible
+#     if batch_number and isinstance(batch_number, str) and batch_number.isdigit():
+#         batch_number = int(batch_number)
+
+#     # ---------- 1. UNCLEAR ----------
+#     if intent == "unknown":
+#         return {
+#             "needs_api": False,
+#             "response": build_llm_message(api_prompt, mode="unclear")
+#         }
+
+#     # ---------- 2. NORMAL CHAT ----------
+#     if not needs_api:
+#         return {
+#             "needs_api": False,
+#             "response": build_llm_message(api_prompt, mode="general")
+#         }
+
+#     # ---------- 3. BATCH REQUEST ----------
+#     if intent == "get_batch":
+
+#         # SPECIFIC BATCH NUMBER
+#         if batch_number is not None:
+#             return {
+#                 "needs_api": True,
+#                 "message": build_llm_message(api_prompt, mode="api_specific", batch_number=batch_number),
+#                 "api_call": {
+#                     "method": "POST",
+#                     "url": "http://localhost:3000/api/batch_data_test",
+#                     "body": {"batch_number": batch_number}
+#                 }
+#             }
+
+#         # LATEST BATCH
+#         return {
+#             "needs_api": True,
+#             "message": build_llm_message(api_prompt, mode="api_latest"),
+#             "api_call": {
+#                 "method": "GET",
+#                 "url": "http://localhost:3000/api/batch/latest",
+#                 "body": {}
+#             }
+#         }
+
+#     # ---------- SAFETY FALLBACK ----------
+#     return {
+#         "needs_api": False,
+#         "response": "I’m not sure what you're asking. Please be more specific."
+#     }
+
+
+# # SIMPLE extraction wrapper
+# def get_data(api_prompt):
+#     extracted_raw = extract_chain.run(
+#         user_input=api_prompt,
+#         format_instructions=format_extract
+#     )
+#     return parser_extract.parse(extracted_raw)
+
+
+# import os
+# import json
+# from dotenv import load_dotenv
+
+# from langchain_core.prompts import ChatPromptTemplate
+# from model import llm_chain, get_llm
+
+# # ---------------------------
+# # ENV SETUP
+# # ---------------------------
+# load_dotenv()
+# os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
+
+# llm = get_llm()
+
+# # ---------------------------
+# # MAIN CHAT PROMPT (Runnable)
+# # ---------------------------
+# prompt = ChatPromptTemplate.from_messages([
+#     ("system",
+#      "You are AquaSense's AI Agent. You assist users with water batch monitoring, "
+#      "sensor data, ML predictions, and general water-quality questions. "
+#      "Always be polite, professional, and supportive."
+#     ),
+#     ("human", "{user_input}")
+# ])
+
+# chat_chain = prompt | llm
+
+
+# # ---------------------------
+# # EXTRACTION FORMAT (JSON MODE)
+# # ---------------------------
+# FORMAT_INSTRUCTIONS = """
+# Return ONLY valid JSON in this exact format:
+# {
+#   "intent": "get_batch | general_chat | unknown",
+#   "batch_number": number or null,
+#   "needs_api": true or false
+# }
+# """
+
+
+# # ---------------------------
+# # EXTRACTION PROMPT
+# # ---------------------------
+# prompt_extract = ChatPromptTemplate.from_template("""
+# You classify batch-related user requests for AquaSense.
+
+# Rules:
+# - If user asks for batch details → intent = "get_batch"
+# - If they mention "batch 12" → batch_number = 12
+# - If they say "today" or "latest" → batch_number = null
+# - Batch requests → needs_api = true
+# - Normal chat → needs_api = false
+# - If unclear → intent = "unknown"
+
+# {format_instructions}
+
+# User Query:
+# {user_input}
+# """)
+
+# extract_chain = prompt_extract | llm
+
+
+# # -------------------------------------------------
+# # HELPER: LLM-GENERATED MESSAGE
+# # -------------------------------------------------
+# def build_llm_message(query: str, mode: str, batch_number=None):
+
+#     if mode == "api_specific":
+#         prompt_text = f"""
+#         The user asked: "{query}"
+
+#         Generate a ~50 word warm, human message:
+#         - You understood they want batch {batch_number}
+#         - You are preparing to fetch full batch details
+#         - It includes sensors, predictions, alerts
+#         """
+
+#     elif mode == "api_latest":
+#         prompt_text = f"""
+#         The user asked: "{query}"
+
+#         Generate a ~50 word friendly message:
+#         - You are retrieving the latest batch
+#         - It includes all sensor values and predictions
+#         """
+
+#     elif mode == "general":
+#         prompt_text = f"""
+#         The user asked: "{query}"
+
+#         Generate a helpful, conversational AquaSense response.
+#         """
+
+#     else:
+#         prompt_text = f"""
+#         The user said: "{query}"
+
+#         Ask them politely to specify:
+#         - A batch number
+#         - Or "latest batch"
+#         """
+
+#     return llm_chain(prompt_text)
+
+
+# # -------------------------------------------------
+# # MAIN DECISION ENGINE
+# # -------------------------------------------------
+# def process_request(api_prompt: str):
+
+#     raw = extract_chain.invoke({
+#         "user_input": api_prompt,
+#         "format_instructions": FORMAT_INSTRUCTIONS
+#     }).content
+
+#     try:
+#         extracted = json.loads(raw)
+#     except:
+#         extracted = {
+#             "intent": "unknown",
+#             "batch_number": None,
+#             "needs_api": False
+#         }
+
+#     intent = extracted.get("intent")
+#     batch_number = extracted.get("batch_number")
+#     needs_api = extracted.get("needs_api")
+
+#     if batch_number and isinstance(batch_number, str) and batch_number.isdigit():
+#         batch_number = int(batch_number)
+
+#     # ---------- 1. UNCLEAR ----------
+#     if intent == "unknown":
+#         return {
+#             "needs_api": False,
+#             "response": build_llm_message(api_prompt, mode="unclear")
+#         }
+
+#     # ---------- 2. NORMAL CHAT ----------
+#     if not needs_api:
+#         return {
+#             "needs_api": False,
+#             "response": build_llm_message(api_prompt, mode="general")
+#         }
+
+#     # ---------- 3. BATCH REQUEST ----------
+#     if intent == "get_batch":
+
+#         if batch_number is not None:
+#             return {
+#                 "needs_api": True,
+#                 "message": build_llm_message(api_prompt, mode="api_specific", batch_number=batch_number),
+#                 "api_call": {
+#                     "method": "POST",
+#                     "url": "http://localhost:3000/api/batch_data_test",
+#                     "body": {"batch_number": batch_number}
+#                 }
+#             }
+
+#         return {
+#             "needs_api": True,
+#             "message": build_llm_message(api_prompt, mode="api_latest"),
+#             "api_call": {
+#                 "method": "GET",
+#                 "url": "http://localhost:3000/api/batch/latest",
+#                 "body": {}
+#             }
+#         }
+
+#     return {
+#         "needs_api": False,
+#         "response": "I’m not sure what you're asking. Please be more specific."
+#     }
+
+
+# # ---------------------------
+# # SIMPLE EXTRACTION HELPER
+# # ---------------------------
+# def get_data(api_prompt):
+
+#     raw = extract_chain.invoke({
+#         "user_input": api_prompt,
+#         "format_instructions": FORMAT_INSTRUCTIONS
+#     }).content
+
+#     try:
+#         return json.loads(raw)
+#     except:
+#         return {
+#             "intent": "unknown",
+#             "batch_number": None,
+#             "needs_api": False
+#         }
+
+
+
+
 import os
-from langchain.prompts import ChatPromptTemplate
-from langchain.chains import LLMChain
-from langchain.output_parsers import ResponseSchema, StructuredOutputParser
+import json
+import re
 from dotenv import load_dotenv
+
+from langchain_core.prompts import ChatPromptTemplate
 from model import llm_chain, get_llm
 
 # ---------------------------
@@ -488,7 +901,7 @@ os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
 llm = get_llm()
 
 # ---------------------------
-# MAIN CHAT PROMPT (Normal Chat)
+# MAIN CHAT PROMPT (Runnable)
 # ---------------------------
 prompt = ChatPromptTemplate.from_messages([
     ("system",
@@ -499,28 +912,21 @@ prompt = ChatPromptTemplate.from_messages([
     ("human", "{user_input}")
 ])
 
-chat_chain = LLMChain(llm=llm, prompt=prompt)
+chat_chain = prompt | llm
+
 
 # ---------------------------
-# EXTRACTION SCHEMA
+# EXTRACTION FORMAT (JSON MODE)
 # ---------------------------
-schemas_extract = [
-    ResponseSchema(
-        name="intent",
-        description="Must be one of: 'get_batch', 'general_chat', 'unknown'"
-    ),
-    ResponseSchema(
-        name="batch_number",
-        description="Batch number if present. Otherwise null."
-    ),
-    ResponseSchema(
-        name="needs_api",
-        description="true if backend API must be called. false if LLM can answer."
-    )
-]
+FORMAT_INSTRUCTIONS = """
+Return ONLY valid JSON in this exact format:
+{
+  "intent": "get_batch | general_chat | unknown",
+  "batch_number": number or null,
+  "needs_api": true or false
+}
+"""
 
-parser_extract = StructuredOutputParser.from_response_schemas(schemas_extract)
-format_extract = parser_extract.get_format_instructions()
 
 # ---------------------------
 # EXTRACTION PROMPT
@@ -536,90 +942,87 @@ Rules:
 - Normal chat → needs_api = false
 - If unclear → intent = "unknown"
 
-Return ONLY:
 {format_instructions}
 
 User Query:
 {user_input}
 """)
 
-extract_chain = LLMChain(llm=llm, prompt=prompt_extract)
+extract_chain = prompt_extract | llm
+
 
 # -------------------------------------------------
-# HELPER: LLM-GENERATED MESSAGE (NO HARDCODE)
+# HELPER: LLM-GENERATED MESSAGE
 # -------------------------------------------------
 def build_llm_message(query: str, mode: str, batch_number=None):
-    """
-    Generates a human-friendly message automatically using LLM.
-    """
+
     if mode == "api_specific":
-        prompt = f"""
+        prompt_text = f"""
         The user asked: "{query}"
 
-        Generate a around 50 words, warm, human-like message explaining:
+        Generate a ~50 word warm, human message:
         - You understood they want batch {batch_number}
-        - You are preparing to fetch the full batch details from the backend
-        - It will include sensor readings, ML predictions, alerts, etc.
-        - Be polite, detailed, supportive.
-        - Do NOT mention URLs or APIs.
+        - You are preparing to fetch full batch details
+        - It includes sensors, predictions, alerts
         """
-    
+
     elif mode == "api_latest":
-        prompt = f"""
+        prompt_text = f"""
         The user asked: "{query}"
 
-        Generate a around 50 words, friendly message explaining:
-        - You are now retrieving the latest batch from today
-        - It will include all sensor values, predictions, and alerts
-        - Reassure the user that data is being fetched
+        Generate a ~50 word friendly message:
+        - You are retrieving the latest batch
+        - It includes all sensor values and predictions
         """
 
     elif mode == "general":
-        prompt = f"""
+        prompt_text = f"""
         The user asked: "{query}"
 
-        Generate a detailed, conversational, supportive message as AquaSense’s assistant.
+        Generate a helpful, conversational AquaSense response.
         """
 
-    else:  # unclear
-        prompt = f"""
+    else:
+        prompt_text = f"""
         The user said: "{query}"
 
-        You could not determine the batch.
-        Generate a around 50 words, polite message asking them to specify:
-        - A batch number (e.g., "batch 7")
+        Ask them politely to specify:
+        - A batch number
         - Or "latest batch"
-        - Or "today’s batch"
-        Be patient and helpful.
         """
 
-    result = llm_chain(prompt)
-    return result
+    return llm_chain(prompt_text)
+
 
 # -------------------------------------------------
-# MAIN DECISION ENGINE
+# ✅✅✅ MAIN DECISION ENGINE (FINAL + REGEX SAFE)
 # -------------------------------------------------
 def process_request(api_prompt: str):
-    """
-    Decides:
-    - Whether to call backend API
-    - Which API
-    - Or return LLM response
-    """
+    print("Processing request:", api_prompt)
+    raw = extract_chain.invoke({
+        "user_input": api_prompt,
+        "format_instructions": FORMAT_INSTRUCTIONS
+    }).content
 
-    extracted_raw = extract_chain.run(
-        user_input=api_prompt,
-        format_instructions=format_extract
-    )
-    extracted = parser_extract.parse(extracted_raw)
+    try:
+        extracted = json.loads(raw)
+    except:
+        extracted = {
+            "intent": "unknown",
+            "batch_number": None,
+            "needs_api": False
+        }
 
     intent = extracted.get("intent")
     batch_number = extracted.get("batch_number")
     needs_api = extracted.get("needs_api")
 
-    # Convert batch_number to int when possible
-    if batch_number and isinstance(batch_number, str) and batch_number.isdigit():
-        batch_number = int(batch_number)
+    # ✅ ✅ ✅ BULLETPROOF REGEX FALLBACK
+    match = re.search(r"batch\s*(\d+)", api_prompt.lower())
+    if match:
+        batch_number = int(match.group(1))
+        intent = "get_batch"
+        needs_api = True
 
     # ---------- 1. UNCLEAR ----------
     if intent == "unknown":
@@ -638,19 +1041,17 @@ def process_request(api_prompt: str):
     # ---------- 3. BATCH REQUEST ----------
     if intent == "get_batch":
 
-        # SPECIFIC BATCH NUMBER
         if batch_number is not None:
             return {
                 "needs_api": True,
                 "message": build_llm_message(api_prompt, mode="api_specific", batch_number=batch_number),
                 "api_call": {
                     "method": "POST",
-                    "url": "http://localhost:3000/api/batch/by-number",
+                    "url": "http://localhost:3000/api/batch_data_test",
                     "body": {"batch_number": batch_number}
                 }
             }
 
-        # LATEST BATCH
         return {
             "needs_api": True,
             "message": build_llm_message(api_prompt, mode="api_latest"),
@@ -661,17 +1062,27 @@ def process_request(api_prompt: str):
             }
         }
 
-    # ---------- SAFETY FALLBACK ----------
     return {
         "needs_api": False,
         "response": "I’m not sure what you're asking. Please be more specific."
     }
 
 
-# SIMPLE extraction wrapper
+# ---------------------------
+# SIMPLE EXTRACTION HELPER
+# ---------------------------
 def get_data(api_prompt):
-    extracted_raw = extract_chain.run(
-        user_input=api_prompt,
-        format_instructions=format_extract
-    )
-    return parser_extract.parse(extracted_raw)
+
+    raw = extract_chain.invoke({
+        "user_input": api_prompt,
+        "format_instructions": FORMAT_INSTRUCTIONS
+    }).content
+
+    try:
+        return json.loads(raw)
+    except:
+        return {
+            "intent": "unknown",
+            "batch_number": None,
+            "needs_api": False
+        }
