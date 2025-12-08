@@ -179,6 +179,33 @@ CREATE TABLE IF NOT EXISTS issue_reports (
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+-- 1) Create ENUM type only if it does not exist
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'org_type') THEN
+        CREATE TYPE org_type AS ENUM (
+            'Agriculture',
+            'Manufacturing',
+            'Municipal',
+            'Commercial',
+            'Other'
+        );
+    END IF;
+END$$;
+
+-- 2) Enable UUID extension (safe and non-destructive)
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- 3) Create the table ONLY if it does NOT already exist
+CREATE TABLE IF NOT EXISTS contact_requests (
+    request_id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),     -- TYPE: UUID
+    full_name VARCHAR(150) NOT NULL,                    -- TYPE: String
+    email VARCHAR(150) NOT NULL,                        -- TYPE: String
+    phone VARCHAR(20) NOT NULL,                         -- TYPE: String
+    organization_type org_type NOT NULL,                -- TYPE: ENUM (strict)
+    message TEXT,                                       -- TYPE: Text
+    created_at TIMESTAMPTZ DEFAULT NOW()                -- TYPE: Timestamp
+);
 
 ---------------------------------------------------------
 -- Indexes

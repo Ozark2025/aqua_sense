@@ -96,7 +96,7 @@
 //   return (
 //     <div className="flex min-h-screen bg-gradient-to-br from-shakespeare-50 via-shakespeare-100 to-aqua-teal/20">
 //       <div className="fixed left-0 top-0 h-screen w-64 bg-white/20 backdrop-blur-xl border-r border-white/20">
-        
+
 //          <AdminSidebar />
 //       </div>
 
@@ -274,7 +274,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import GlassCard from '@/components/admin/GlassCard';
 import WaveDivider from '@/components/admin/WaveDivider';
@@ -283,96 +283,58 @@ import { Mail, Phone, Building2, Calendar, User } from 'lucide-react';
 export default function CustomerQueriesPage() {
   const [selectedQuery, setSelectedQuery] = useState(null);
 
-  const queries = [
-    {
-      id: 1,
-      userName: 'Rajesh Kumar',
-      email: 'rajesh.k@greenfarms.in',
-      phone: '+91 98765 43210',
-      organizationType: 'Agriculture',
-      subject: 'Water Management Solution for 500-acre Farm',
-      message: 'Hello, I run a 500-acre agricultural farm in Punjab. We are facing severe water wastage issues and need an efficient water management system. Our current irrigation method is outdated and we lose almost 40% water due to inefficient distribution. Can AquaSense help us optimize our water usage and reduce costs?',
-      status: 'Open',
-      submittedOn: 'Dec 7, 2025 - 10:30 AM'
-    },
-    {
-      id: 2,
-      userName: 'Priya Sharma',
-      email: 'priya.sharma@technimanufacturing.com',
-      phone: '+91 98234 56789',
-      organizationType: 'Manufacturing',
-      subject: 'IoT Sensors for Industrial Water Quality Monitoring',
-      message: 'We are a manufacturing unit in Bangalore with high water consumption. We need real-time monitoring of TDS, pH levels, and water flow across 15 different production lines. Can your IoT sensors integrate with our existing SCADA system? Also, what is the ROI timeline?',
-      status: 'In Progress',
-      submittedOn: 'Dec 6, 2025 - 2:15 PM'
-    },
-    {
-      id: 3,
-      userName: 'Amit Patel',
-      email: 'amit.patel@citycouncil.gov.in',
-      phone: '+91 97654 32109',
-      organizationType: 'Municipal',
-      subject: 'Smart Water Management for Smart City Project',
-      message: 'I am the municipal water officer for Surat Smart City project. We are looking for a comprehensive water management solution to monitor water distribution across 500,000+ households, detect leakages in real-time, and implement predictive maintenance. This is a large-scale deployment. Can you provide a detailed proposal with scalability options?',
-      status: 'Open',
-      submittedOn: 'Dec 7, 2025 - 9:00 AM'
-    },
-    {
-      id: 4,
-      userName: 'Sneha Reddy',
-      email: 'sneha.reddy@techpark.in',
-      phone: '+91 91234 56780',
-      organizationType: 'Commercial',
-      subject: 'Water Conservation System for IT Park',
-      message: 'We manage a 10-acre IT park in Hyderabad housing 20+ companies. Looking for automated water management with rainwater harvesting integration, greywater recycling monitoring, and usage analytics. Need consultation on implementation.',
-      status: 'Resolved',
-      submittedOn: 'Dec 5, 2025 - 11:00 AM'
-    },
-    {
-      id: 5,
-      userName: 'Vikram Singh',
-      email: 'vikram.singh@hotelgroup.in',
-      phone: '+91 99876 54321',
-      organizationType: 'Commercial',
-      subject: 'Water Management for Hotel Chain',
-      message: 'We operate a chain of 12 luxury hotels across India. Each property uses 50,000+ liters daily. We want centralized monitoring, automated alerts for anomalies, and detailed analytics per property. What is your experience with hospitality sector?',
-      status: 'In Progress',
-      submittedOn: 'Dec 6, 2025 - 10:00 AM'
-    },
-    {
-      id: 6,
-      userName: 'Anjali Mehta',
-      email: 'anjali.mehta@researchinstitute.edu',
-      phone: '+91 98123 45670',
-      organizationType: 'Other',
-      subject: 'Water Quality Research Partnership Inquiry',
-      message: 'I am a researcher at IIT Bombay working on sustainable water management. We are interested in using AquaSense sensors for a 2-year research project on urban water quality patterns. Do you offer academic partnerships or discounted pricing for research institutions? We would also like to explore potential collaboration opportunities.',
-      status: 'Open',
-      submittedOn: 'Dec 7, 2025 - 8:00 AM'
-    },
-    {
-      id: 7,
-      userName: 'Karthik Narayanan',
-      email: 'karthik.n@textileindustries.com',
-      phone: '+91 96543 21098',
-      organizationType: 'Manufacturing',
-      subject: 'Water Recycling System for Textile Unit',
-      message: 'Our textile manufacturing unit in Coimbatore processes 200,000 liters of water daily. We want to implement a water recycling and treatment system to reduce costs and meet environmental compliance. Can you help design a solution that integrates with our current production flow?',
-      status: 'Open',
-      submittedOn: 'Dec 7, 2025 - 11:45 AM'
-    },
-    {
-      id: 8,
-      userName: 'Meera Deshmukh',
-      email: 'meera.d@apartmentassociation.in',
-      phone: '+91 92345 67801',
-      organizationType: 'Commercial',
-      subject: 'Water Management for Residential Complex',
-      message: 'I represent a 500-apartment residential complex in Pune. We are facing water shortage issues and need better monitoring and distribution. Interested in smart meters, leak detection, and usage analytics for each apartment. Please provide pricing and implementation timeline.',
-      status: 'Open',
-      submittedOn: 'Dec 6, 2025 - 4:30 PM'
+
+
+  const [queries, setQueries] = useState([]);
+
+  useEffect(() => {
+    async function loadQueries() {
+      try {
+        const res = await fetch("/api/contact/all");
+        const data = await res.json();
+        setQueries(data);
+      } catch (err) {
+        console.error("Failed to load queries:", err);
+      }
     }
-  ];
+    loadQueries();
+  }, []);
+  
+  async function updateStatus(newStatus) {
+  if (!selectedQuery) return;
+
+  try {
+    const res = await fetch("/api/contact/update-status", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        id: selectedQuery.id,
+        status: newStatus,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      // Update local queries list WITHOUT reloading page
+      setQueries(prev =>
+        prev.map(q =>
+          q.id === selectedQuery.id
+            ? { ...q, status: newStatus }
+            : q
+        )
+      );
+
+      // Also update the selected query’s status
+      setSelectedQuery(prev => ({ ...prev, status: newStatus }));
+    }
+  } catch (err) {
+    console.error("Error updating status:", err);
+  }
+}
+
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-shakespeare-50 via-shakespeare-100 to-aqua-teal/20">
@@ -425,7 +387,7 @@ export default function CustomerQueriesPage() {
                           px-2 py-1 rounded-full text-xs font-semibold
                           ${query.status === 'Open' ? 'bg-orange-accent/20 text-orange-accent' :
                             query.status === 'In Progress' ? 'bg-shakespeare-500/20 text-shakespeare-700' :
-                            'bg-green-500/20 text-green-700'
+                              'bg-green-500/20 text-green-700'
                           }
                         `}>
                           {query.status}
@@ -462,7 +424,7 @@ export default function CustomerQueriesPage() {
                         px-4 py-2 rounded-full text-sm font-semibold
                         ${selectedQuery.status === 'Open' ? 'bg-orange-accent/20 text-orange-accent' :
                           selectedQuery.status === 'In Progress' ? 'bg-shakespeare-500/20 text-shakespeare-700' :
-                          'bg-green-500/20 text-green-700'
+                            'bg-green-500/20 text-green-700'
                         }
                       `}>
                         {selectedQuery.status}
@@ -519,7 +481,7 @@ export default function CustomerQueriesPage() {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex gap-3 mt-6 pt-6 border-t border-shakespeare-300/30">
+                  {/* <div className="flex gap-3 mt-6 pt-6 border-t border-shakespeare-300/30">
                     <button className="px-6 py-3 rounded-xl bg-gradient-to-r from-shakespeare-500 to-shakespeare-600 text-white font-semibold hover:shadow-lg hover:shadow-shakespeare-500/30 transition-all duration-300">
                       Mark as In Progress
                     </button>
@@ -533,7 +495,31 @@ export default function CustomerQueriesPage() {
                       <Mail className="w-4 h-4" />
                       Send Email
                     </a>
+                  </div> */}
+                  <div className="flex gap-3 mt-6 pt-6 border-t border-shakespeare-300/30">
+                    <button
+                      onClick={() => updateStatus("In Progress")}
+                      className="px-6 py-3 rounded-xl bg-gradient-to-r from-shakespeare-500 to-shakespeare-600 text-white font-semibold hover:shadow-lg hover:shadow-shakespeare-500/30 transition-all duration-300"
+                    >
+                      Mark as In Progress
+                    </button>
+
+                    <button
+                      onClick={() => updateStatus("Resolved")}
+                      className="px-6 py-3 rounded-xl bg-white/10 border border-shakespeare-300/30 text-shakespeare-950 font-semibold hover:bg-white/20 transition-all duration-300"
+                    >
+                      Mark as Resolved
+                    </button>
+
+                    <a
+                      href={`mailto:${selectedQuery.email}`}
+                      className="px-6 py-3 rounded-xl bg-white/10 border border-shakespeare-300/30 text-shakespeare-950 font-semibold hover:bg-white/20 transition-all duration-300 flex items-center gap-2"
+                    >
+                      <Mail className="w-4 h-4" />
+                      Send Email
+                    </a>
                   </div>
+
                 </GlassCard>
               ) : (
                 <GlassCard className="h-[calc(100vh-16rem)] flex items-center justify-center">
