@@ -14,6 +14,7 @@ export default function Header() {
     { href: '/', label: 'Home' },
     { href: '/about', label: 'About Us' },
     { href: '/water-monitor', label: 'Live Monitor' },
+    { href: '/innovations', label: 'Innovations' },
     { href: '/ai-chat', label: 'AI Chat' },
     { href: '/learn', label: 'Learn' },
     { href: '/community', label: 'Community' },
