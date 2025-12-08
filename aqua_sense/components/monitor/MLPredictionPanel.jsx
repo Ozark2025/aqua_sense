@@ -78,8 +78,8 @@ export default function MLPredictionPanel({ batchData, onPredictionComplete }) {
 
   useEffect(() => {
   if (!batchData) return;
-
-  setIsAnalyzing(true);
+    console.log("the data recieved from the prv catch ",batchData);
+   setIsAnalyzing(true);
 
   const timer = setTimeout(async () => {
     const prediction = await fetchPrediction(batchData);

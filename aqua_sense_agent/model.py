@@ -55,27 +55,105 @@
 
 
 
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.prompts import ChatPromptTemplate
+# # from langchain_google_genai import ChatGoogleGenerativeAI
+# from langchain.prompts import ChatPromptTemplate
+# from dotenv import load_dotenv
+# # import os
+# from langchain_google_genai import ChatGoogleGenerativeAI
+# import os
+
+# load_dotenv()
+# gemini = ChatGoogleGenerativeAI(
+#     model="models/gemini-1.0-pro",   # ✅ ONLY SAFE MODEL FOR v1beta
+#     google_api_key=os.getenv("GOOGLE_API_KEY"),
+#     temperature=0
+# )
+
+# # ✅ Make sure API key is loaded correctly
+# # os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
+
+
+# # ✅ Gemini LLM with REQUIRED flag to support SystemMessage
+
+# # llm = ChatGoogleGenerativeAI(
+# #     model="models/gemini-1.0-pro",   # ✅ ONLY SAFE MODEL FOR v1beta
+# #     google_api_key=os.getenv("GOOGLE_API_KEY"),
+# #     temperature=0
+# # )
+
+
+# # -------------------
+# # Prompt Template
+# # -------------------
+# prompt = ChatPromptTemplate.from_me3ssages([
+#     (
+#         "system",
+#         "You are AquaSense's official AI Agent. "
+#         "Your role is to help users monitor water quality, analyze sensor data, upload batches, "
+#         "predict water reuse categories, and guide them through treatment stages. "
+#         "You can explain parameters like pH, turbidity, DO, TDS, and temperature, and assist users in "
+#         "understanding model predictions. "
+#         "You must always maintain accuracy, clarity, and safety when interpreting water-quality metrics. "
+#         "If data looks abnormal or hazardous, warn the user politely. "
+#         "You can help troubleshoot issues, guide users through dashboards, processing steps, "
+#         "and system features such as batch uploads, alerts, and treatment recommendations. "
+#         "Always be supportive, responsible, and technically correct. "
+#         "Ask clarifying questions whenever the user's query is incomplete."
+#     ),
+#     ("human", "{user_input}")
+# ])
+
+
+# # -------------------
+# # LangChain v2 Pipeline
+# # -------------------
+# chain = prompt | gemini
+
+
+# def llm_chain(user_input: str):
+#     response = chain.invoke({"user_input": user_input})
+#     return response.content  # ✅ Always return clean text
+
+
+# def get_llm():
+#     return gemini
+
+
+
+
+
+
+
+
+
+
 from dotenv import load_dotenv
 import os
-
-load_dotenv()
-
-# ✅ Make sure API key is loaded correctly
-os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
-
-
-# ✅ Gemini LLM with REQUIRED flag to support SystemMessage
-gemini = ChatGoogleGenerativeAI(
-    model="gemini-2.5-flash",
-    temperature=0,
-    convert_system_message_to_human=True  # ✅ THIS FIXES YOUR CRASH
-)
-
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.prompts import ChatPromptTemplate
 
 # -------------------
-# Prompt Template
+# ENV
+# -------------------
+load_dotenv()
+
+# -------------------
+# GEMINI LLM (v1 API)
+# -------------------
+# gemini = ChatGoogleGenerativeAI(
+#     model="models/gemini-1.0-pro",
+#     google_api_key=os.getenv("GOOGLE_API_KEY"),
+#     api_version="v1",                  # ✅ REQUIRED
+#     temperature=0
+# )
+os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
+gemini = ChatGoogleGenerativeAI(
+    model="gemini-2.5-flash",
+    temperature=0
+)
+
+# -------------------
+# SYSTEM PROMPT
 # -------------------
 prompt = ChatPromptTemplate.from_messages([
     (
@@ -85,31 +163,26 @@ prompt = ChatPromptTemplate.from_messages([
         "predict water reuse categories, and guide them through treatment stages. "
         "You can explain parameters like pH, turbidity, DO, TDS, and temperature, and assist users in "
         "understanding model predictions. "
-        "You must always maintain accuracy, clarity, and safety when interpreting water-quality metrics. "
         "If data looks abnormal or hazardous, warn the user politely. "
-        "You can help troubleshoot issues, guide users through dashboards, processing steps, "
-        "and system features such as batch uploads, alerts, and treatment recommendations. "
-        "Always be supportive, responsible, and technically correct. "
-        "Ask clarifying questions whenever the user's query is incomplete."
+        "Always be accurate and responsible."
     ),
     ("human", "{user_input}")
 ])
 
-
-# -------------------
-# LangChain v2 Pipeline
-# -------------------
+# ✅ LangChain 1.x Runnable Chain
 chain = prompt | gemini
 
 
-def llm_chain(user_input: str):
+# -------------------
+# PUBLIC HELPERS
+# -------------------
+def llm_chain(user_input: str) -> str:
     response = chain.invoke({"user_input": user_input})
-    return response.content  # ✅ Always return clean text
+    return response.content
 
 
 def get_llm():
     return gemini
-
 
 
 

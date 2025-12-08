@@ -84,26 +84,83 @@
 
 from agent import process_request
 
+# def searching(api_prompt: str, history=None):
+#     """
+#     Takes user query + optional history
+#     Uses the agent to decide:
+#     - Should the backend API be hit?
+#     - Or LLM respond directly?
+#     """
+
+#     result = process_request(api_prompt)
+
+#     # If backend API is needed (batch fetch)
+#     if result.get("needs_api") is True:
+#         return {
+#             "success": True,
+#             "type": "api_call",
+#             "message": result.get("message"),  # LLM generated
+#             "api_call": result.get("api_call")
+#         }
+
+#     # Otherwise normal chat
+#     return {
+#         "success": True,
+#         "type": "ai_response",
+#         "response": result.get("response")
+#     }
+
+
+import requests
+from agent import process_request
+
 def searching(api_prompt: str, history=None):
     """
-    Takes user query + optional history
-    Uses the agent to decide:
-    - Should the backend API be hit?
-    - Or LLM respond directly?
+    Takes user query + optional history.
+    If backend API is needed → calls it using POST only.
+    Otherwise → returns normal AI response.
     """
 
     result = process_request(api_prompt)
-
-    # If backend API is needed (batch fetch)
+    print(f"Search Worker - Processed Result: {result}")
+    # ✅ CASE 1: BACKEND API IS REQUIRED
     if result.get("needs_api") is True:
-        return {
-            "success": True,
-            "type": "api_call",
-            "message": result.get("message"),  # LLM generated
-            "api_call": result.get("api_call")
-        }
+        api_call = result.get("api_call")
+        message = result.get("message")
 
-    # Otherwise normal chat
+        try:
+            url = api_call.get("url")
+            body = api_call.get("body", {})
+
+            # 🔥 ONLY POST METHOD IS USED
+            api_response = requests.post(url, json=body, timeout=10)
+
+            # ✅ If backend succeeds
+            if api_response.status_code == 200:
+                backend_data = api_response.json()
+            else:
+                return {
+                    "success": False,
+                    "msg": "Backend API failed",
+                    "status_code": api_response.status_code,
+                    "backend_response": api_response.text
+                }
+
+            return {
+                "success": True,
+                "type": "api_result",
+                "message": message,      # ✅ LLM-generated message
+                "data": backend_data    # ✅ REAL batch data from backend
+            }
+
+        except Exception as e:
+            return {
+                "success": False,
+                "msg": "Error while contacting backend API",
+                "error": str(e)
+            }
+
+    # ✅ CASE 2: NORMAL AI CHAT (NO API)
     return {
         "success": True,
         "type": "ai_response",
