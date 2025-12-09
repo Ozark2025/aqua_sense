@@ -633,71 +633,61 @@ function WhyIndiaSection() {
 function TeamSection() {
   const teamMembers = [
     {
-      name: 'Arjun Sharma',
-      role: 'ML Engineer',
+      name: 'Aman Kumar',
+      role: ' Team Lead',
       description: 'Specializes in predictive analytics and neural networks for water demand forecasting.',
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400',
+      image: '/am.jpg',
       social: {
         linkedin: '#',
         twitter: '#',
-        email: 'arjun@aquasense.in',
+        email: 'aman@aquasense.in',
       },
     },
     {
-      name: 'Priya Patel',
-      role: 'UI/UX Lead',
+      name: 'Himanshu Dutta',
+      role: 'Team Member',
       description: 'Designs intuitive interfaces that make complex water data accessible to everyone.',
-      image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400',
+      image: '/hi.jpg',
       social: {
         linkedin: '#',
         twitter: '#',
-        email: 'priya@aquasense.in',
+        email: 'himansh@aquasense.in',
       },
     },
     {
-      name: 'Rahul Verma',
-      role: 'IoT Lead',
+      name: 'Sushil Kumar saw',
+      role: 'Team Member',
       description: 'Expert in sensor networks and hardware integration for real-time monitoring.',
-      image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400',
+      image: '/su.jpg',
       social: {
         linkedin: '#',
         twitter: '#',
-        email: 'rahul@aquasense.in',
+        email: 'sushila@aquasense.in',
       },
     },
     {
-      name: 'Sneha Reddy',
-      role: 'Backend Engineer',
+      name: 'Sachin Giri',
+      role: 'Team Member',
       description: 'Builds scalable cloud infrastructure and APIs that power AquaSense platform.',
-      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400',
+      image: '/sa.jpg',
       social: {
         linkedin: '#',
         twitter: '#',
-        email: 'sneha@aquasense.in',
+        email: 'sachin@aquasense.in',
       },
     },
     {
-      name: 'Vikram Singh',
-      role: 'LLM Agent Engineer',
+      name: 'Ashish Ranjan',
+      role: 'Team Member',
       description: 'Develops intelligent AI agents for autonomous water system optimization.',
-      image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400',
+      image: '/as.jpg',
       social: {
         linkedin: '#',
         twitter: '#',
         email: 'vikram@aquasense.in',
       },
-    },
-    {
-      name: 'Ananya Kumar',
-      role: 'Data Engineer',
-      description: 'Manages data pipelines and analytics infrastructure for millions of sensor readings.',
-      image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400',
-      social: {
-        linkedin: '#',
-        twitter: '#',
-        email: 'ananya@aquasense.in',
-      },
-    },
+    }
+    
   ];
 
   return (
